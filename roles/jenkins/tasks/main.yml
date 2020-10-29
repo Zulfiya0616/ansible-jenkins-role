@@ -19,11 +19,16 @@
     name: jenkins
     update_cache: yes
     state: present
+
+
+- name: Change Jenkins Java options
+  lineinfile: 
+    dest=/etc/sysconfig/jenkins
+    regex=^JENKINS_JAVA_OPTIONS= 
+    line=JENKINS_JAVA_OPTIONS="{{jenkins.JAVA_OPTIONS}}"
+  become: true
+
 - name: Start Jenkins server and enable it
   systemd: name=jenkins state=restarted enabled=yes
   become: yes
-
-
-
-
 
