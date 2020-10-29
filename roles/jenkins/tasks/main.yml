@@ -1,25 +1,27 @@
 
+
 - name: Install yum
   yum:
     name:
       - wget
-      - java-1.8.0-openjdk
+      - "{{java.VERSION}}"
+    state: present
 
 - name: Download jenkins.repo
   get_url:
-    url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    url: "{{jenkins.repo_URL}}"
     dest: /etc/yum.repos.d/jenkins.repo
 
-- name: Import Jenkins Key
+- name: Import GPG Key
   rpm_key:
     state: present
-    key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    key: "{{jenkins.gpg_key}}"
+
 - name: Ensure Jenkins is Installed
   yum :
     name: jenkins
     update_cache: yes
     state: present
-
 
 - name: Change Jenkins Java options
   lineinfile: 
@@ -27,8 +29,65 @@
     regex=^JENKINS_JAVA_OPTIONS= 
     line=JENKINS_JAVA_OPTIONS="{{jenkins.JAVA_OPTIONS}}"
   become: true
-
+  
 - name: Start Jenkins server and enable it
   systemd: name=jenkins state=restarted enabled=yes
   become: yes
+
+ 
+- name: Install yum utils
+  yum:
+    name: yum-utils
+    state: latest
+
+- name: Install device-mapper-persistent-data
+  yum:
+    name: device-mapper-persistent-data
+    state: latest
+
+- name: Install lvm2
+  yum:
+    name: lvm2
+    state: latest
+
+- name: Add Docker repo
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docer-ce.repo
+  become: yes
+
+- name: Enable Docker Edge repo
+  ini_file:
+    dest: /etc/yum.repos.d/docer-ce.repo
+    section: 'docker-ce-edge'
+    option: enabled
+    value: 0
+  become: yes
+
+- name: Enable Docker Test repo
+  ini_file:
+    dest: /etc/yum.repos.d/docer-ce.repo
+    section: 'docker-ce-test'
+    option: enabled
+    value: 0
+  become: yes
+
+- name: Install Docker
+  package:
+    name: docker-ce
+    state: latest
+  become: yes 
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes 
+
+
+
+
+
+
 
